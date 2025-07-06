@@ -427,12 +427,13 @@ local GetAllCoins = MiscTab:CreateToggle({
    end,
 })
 
--- Auto recarregar a Spy automaticamente
+-- Auto recarregar Spy e Murder automaticamente
 task.spawn(function()
    while true do
       local player = game.Players.LocalPlayer
       local character = player.Character
       if character then
+         -- Recarrega Spy
          local spy = character:FindFirstChild("Spy")
          if spy then
             local reloadEvent = spy:FindFirstChild("Reload") or spy:FindFirstChildWhichIsA("RemoteEvent")
@@ -443,6 +444,21 @@ task.spawn(function()
             else
                if spy:FindFirstChild("ReloadFunction") and type(spy.ReloadFunction) == "function" then
                   pcall(spy.ReloadFunction)
+               end
+            end
+         end
+         
+         -- Recarrega Murder
+         local murder = character:FindFirstChild("Murder")
+         if murder then
+            local reloadEventM = murder:FindFirstChild("Reload") or murder:FindFirstChildWhichIsA("RemoteEvent")
+            if reloadEventM then
+               pcall(function()
+                  reloadEventM:FireServer()
+               end)
+            else
+               if murder:FindFirstChild("ReloadFunction") and type(murder.ReloadFunction) == "function" then
+                  pcall(murder.ReloadFunction)
                end
             end
          end
