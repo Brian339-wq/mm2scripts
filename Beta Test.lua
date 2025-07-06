@@ -139,11 +139,10 @@ function DisableFly()
    for k in pairs(directions) do directions[k] = false end
 end
 
--- ESP com Highlight
+-- ESP com Highlight (sem BillboardGui)
 local function GetColorFromTool(player)
    local char = player.Character
    if not char then return Color3.new(1,1,1) end
-   -- Verifica arma ou faca no personagem OU na backpack
    for _, tool in ipairs(player.Backpack:GetChildren()) do
       if tool:IsA("Tool") then
          if tool.Name == "Knife" then
@@ -170,37 +169,51 @@ local function GetColorFromTool(player)
 end
 
 local function CreateHighlightESP(player)
+   if player == game.Players.LocalPlayer then return end
+
+   local function updateHighlightColor(highlight)
+      highlight.FillColor = GetColorFromTool(player)
+   end
+
    local function attach()
-      if player == game.Players.LocalPlayer then return end
       local char = player.Character or player.CharacterAdded:Wait()
-      local highlight = char:FindFirstChild("_espHighlight") or Instance.new("Highlight")
+
+      local oldHighlight = char:FindFirstChild("_espHighlight")
+      if oldHighlight then
+         oldHighlight:Destroy()
+      end
+
+      local highlight = Instance.new("Highlight")
       highlight.Name = "_espHighlight"
       highlight.Adornee = char
       highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
       highlight.FillTransparency = 0.8
       highlight.OutlineTransparency = 0.3
       highlight.FillColor = GetColorFromTool(player)
-      highlight.OutlineColor = Color3.new(0,0,0)
+      highlight.OutlineColor = Color3.new(0, 0, 0)
       highlight.Parent = char
 
       char.ChildAdded:Connect(function(c)
          if c:IsA("Tool") then
-            highlight.FillColor = GetColorFromTool(player)
+            updateHighlightColor(highlight)
          end
       end)
 
       char.ChildRemoved:Connect(function(c)
          if c:IsA("Tool") then
-            highlight.FillColor = GetColorFromTool(player)
+            updateHighlightColor(highlight)
          end
       end)
    end
 
    if player.Character then
       attach()
-   else
-      player.CharacterAdded:Connect(attach)
    end
+
+   player.CharacterAdded:Connect(function()
+      task.wait(1)
+      attach()
+   end)
 end
 
 local function RemoveHighlightESP(player)
@@ -215,6 +228,7 @@ local PlayerTab = Window:CreateTab("🎩 | Player", nil)
 local MurderTab = Window:CreateTab("🔪 | Murder", nil)
 local SherrifTab = Window:CreateTab("🔫 | Sherrif", nil)
 local MiscTab = Window:CreateTab("🍖 | Misc", nil)
+
 -- Player Tab UI
 PlayerTab:CreateSlider({
    Name = "Speed",
@@ -224,7 +238,10 @@ PlayerTab:CreateSlider({
    CurrentValue = 16,
    Flag = "SpeedFlag",
    Callback = function(Value)
-      game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = Value
+      local humanoid = game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("Humanoid")
+      if humanoid then
+         humanoid.WalkSpeed = Value
+      end
    end,
 })
 
@@ -236,7 +253,10 @@ PlayerTab:CreateSlider({
    CurrentValue = 50,
    Flag = "JumpPowerFlag",
    Callback = function(Value)
-      game.Players.LocalPlayer.Character.Humanoid.JumpPower = Value
+      local humanoid = game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("Humanoid")
+      if humanoid then
+         humanoid.JumpPower = Value
+      end
    end,
 })
 
@@ -281,6 +301,23 @@ PlayerTab:CreateToggle({
    end,
 })
 
+PlayerTab:CreateToggle({
+   Name = "HumanoidRootPart Anchor",
+   CurrentValue = false,
+   Flag = "HRPAnchorToggle",
+   Callback = function(Value)
+      local lp = game.Players.LocalPlayer
+      local char = lp.Character
+      if char then
+         local hrp = char:FindFirstChild("HumanoidRootPart")
+         if hrp then
+            hrp.Anchored = Value
+         end
+      end
+   end,
+})
+
+-- Murder Tab UI
 MurderTab:CreateToggle({
    Name = "Bring All",
    CurrentValue = false,
@@ -403,68 +440,28 @@ local GetGun = SherrifTab:CreateButton({
 })
 
 local GetAllCoins = MiscTab:CreateToggle({
-   Name = "Get All coin's (Beta test Desenabled)",
+   Name = "Get All Coins (Teleport)",
    CurrentValue = false,
    Flag = "GetAllCoinsFlag",
    Callback = function(Value)
       getgenv().CollectingCoins = Value
       local player = game.Players.LocalPlayer
-      local character = player.Character or player.CharacterAdded:Wait()
-      local partToSimulateTouch = character:FindFirstChild("HumanoidRootPart") or character:FindFirstChild("Torso")
-
       task.spawn(function()
          while getgenv().CollectingCoins do
-            for i, v in pairs(workspace:GetDescendants()) do
-               if v:IsA("BasePart") and v.Name == "Coin_Server" and partToSimulateTouch then
-                  firetouchinterest(v, partToSimulateTouch, 0)
-                  wait()
-                  firetouchinterest(v, partToSimulateTouch, 1)
+            local character = player.Character or player.CharacterAdded:Wait()
+            local hrp = character:FindFirstChild("HumanoidRootPart") or character:FindFirstChild("Torso")
+            if hrp then
+               for _, v in pairs(workspace:GetDescendants()) do
+                  if v:IsA("BasePart") and v.Name == "Coin_Server" then
+                     -- Teleporta para a moeda
+                     hrp.CFrame = v.CFrame + Vector3.new(0, 3, 0)
+                     task.wait(0.1)
+                     -- Toca na moeda para coletar
+                     firetouchinterest(v, hrp, 0)
+                     task.wait()
+                     firetouchinterest(v, hrp, 1)
+                     task.wait(0.1)
+                  end
                end
             end
-            task.wait(0.5)
-         end
-      end)
-   end,
-})
-
--- Auto recarregar Spy e Murder automaticamente
-task.spawn(function()
-   while true do
-      local player = game.Players.LocalPlayer
-      local character = player.Character
-      if character then
-         -- Recarrega Spy
-         local spy = character:FindFirstChild("Spy")
-         if spy then
-            local reloadEvent = spy:FindFirstChild("Reload") or spy:FindFirstChildWhichIsA("RemoteEvent")
-            if reloadEvent then
-               pcall(function()
-                  reloadEvent:FireServer()
-               end)
-            else
-               if spy:FindFirstChild("ReloadFunction") and type(spy.ReloadFunction) == "function" then
-                  pcall(spy.ReloadFunction)
-               end
-            end
-         end
-         
-         -- Recarrega Murder
-         local murder = character:FindFirstChild("Murder")
-         if murder then
-            local reloadEventM = murder:FindFirstChild("Reload") or murder:FindFirstChildWhichIsA("RemoteEvent")
-            if reloadEventM then
-               pcall(function()
-                  reloadEventM:FireServer()
-               end)
-            else
-               if murder:FindFirstChild("ReloadFunction") and type(murder.ReloadFunction) == "function" then
-                  pcall(murder.ReloadFunction)
-               end
-            end
-         end
-      end
-      task.wait(0.1)
-   end
-end)
-
-end
+            task.wait
