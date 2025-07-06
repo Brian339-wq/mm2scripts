@@ -457,11 +457,18 @@ local GetAllCoins = MiscTab:CreateToggle({
                      hrp.CFrame = v.CFrame + Vector3.new(0, 3, 0)
                      task.wait(0.1)
                      -- Toca na moeda para coletar
-                     firetouchinterest(v, hrp, 0)
-                     task.wait()
-                     firetouchinterest(v, hrp, 1)
+                     pcall(function()
+                        firetouchinterest(v, hrp, 0)
+                        task.wait(0.05)
+                        firetouchinterest(v, hrp, 1)
+                     end)
                      task.wait(0.1)
                   end
                end
             end
-            task.wait
+            task.wait(0.5)
+         end
+      end)
+   end,
+})
+
