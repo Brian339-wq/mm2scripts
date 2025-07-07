@@ -380,41 +380,7 @@ MurderTab:CreateToggle({
    end,
 })
 
-MurderTab:CreateToggle({
-   Name = "Auto Throw",
-   CurrentValue = false,
-   Flag = "AutoThrowFlag",
-   Callback = function(Value)
-      getgenv().AutoThrow = Value
-      if Value then
-         task.spawn(function()
-            while getgenv().AutoThrow do
-               local lp = game.Players.LocalPlayer
-               local knife = lp.Character and lp.Character:FindFirstChild("Knife")
-               if knife and knife:FindFirstChild("Throw") then
-                  local players = game.Players:GetPlayers()
-                  local targets = {}
-                  for _, p in pairs(players) do
-                     if p ~= lp and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-                        table.insert(targets, p)
-                     end
-                  end
-                  if #targets > 0 then
-                     local target = targets[math.random(1, #targets)]
-                     local hrp = target.Character.HumanoidRootPart
-                     local args = {
-                        hrp.CFrame,
-                        Vector3.new(hrp.Position.X + 15, hrp.Position.Y, hrp.Position.Z + 15)
-                     }
-                     knife.Throw:FireServer(unpack(args))
-                  end
-               end
-               task.wait(0.1)
-            end
-         end)
-      end
-   end,
-})
+
 
 local ShootMurder = SherrifTab:CreateButton({
    Name = "Shoot Murder (Beta test Desenabled)",
