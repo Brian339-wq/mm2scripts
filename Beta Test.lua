@@ -1,4 +1,3 @@
--- MM2 Script - Atualizado com melhorias
 if game.PlaceId == 142823291 then
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
@@ -380,7 +379,41 @@ MurderTab:CreateToggle({
    end,
 })
 
-
+MurderTab:CreateToggle({
+   Name = "Auto Throw",
+   CurrentValue = false,
+   Flag = "AutoThrowFlag",
+   Callback = function(Value)
+      getgenv().AutoThrow = Value
+      if Value then
+         task.spawn(function()
+            while getgenv().AutoThrow do
+               local lp = game.Players.LocalPlayer
+               local knife = lp.Character and lp.Character:FindFirstChild("Knife")
+               if knife and knife:FindFirstChild("Throw") then
+                  local players = game.Players:GetPlayers()
+                  local targets = {}
+                  for _, p in pairs(players) do
+                     if p ~= lp and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                        table.insert(targets, p)
+                     end
+                  end
+                  if #targets > 0 then
+                     local target = targets[math.random(1, #targets)]
+                     local hrp = target.Character.HumanoidRootPart
+                     local args = {
+                        hrp.CFrame,
+                        Vector3.new(hrp.Position.X + 15, hrp.Position.Y, hrp.Position.Z + 15)
+                     }
+                     knife.Throw:FireServer(unpack(args))
+                  end
+               end
+               task.wait(0.1)
+            end
+         end)
+      end
+   end,
+})
 
 local ShootMurder = SherrifTab:CreateButton({
    Name = "Shoot Murder (Beta test Desenabled)",
@@ -436,154 +469,6 @@ local GetAllCoins = MiscTab:CreateToggle({
             task.wait(0.5)
          end
       end)
-   end,
-})
-
--- Função auxiliar para pegar jogador mais próximo
-function GetClosestPlayer()
-   local lp = game.Players.LocalPlayer
-   local hrp = lp.Character and lp.Character:FindFirstChild("HumanoidRootPart")
-   local closest, shortestDist = nil, math.huge
-
-   for _, p in pairs(game.Players:GetPlayers()) do
-      if p ~= lp and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-         local dist = (p.Character.HumanoidRootPart.Position - hrp.Position).Magnitude
-         if dist < shortestDist then
-            closest, shortestDist = p, dist
-         end
-      end
-   end
-
-   return closest
-end
-
--- Botão móvel para Throw (inicialmente escondido)
-local playerGui = game.Players.LocalPlayer:WaitForChild("PlayerGui")
-local gui = Instance.new("ScreenGui")
-local button = Instance.new("TextButton")
-
-button.Text = "Throw"
-button.Size = UDim2.new(0, 100, 0, 50)
-button.Position = UDim2.new(0.5, -50, 0.85, 0)
-button.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-button.TextColor3 = Color3.fromRGB(255, 255, 255)
-button.BackgroundTransparency = 0.3
-button.TextScaled = true
-button.Active = true
-button.Draggable = true
-button.Visible = false
-button.Parent = gui
-
-button.MouseButton1Click:Connect(function()
-   local lp = game.Players.LocalPlayer
-   local knife = lp.Character and lp.Character:FindFirstChild("Knife")
-   local target = GetClosestPlayer()
-   if knife and knife:FindFirstChild("Throw") and target then
-      local hrp = target.Character.HumanoidRootPart
-      local args = {
-         hrp.CFrame,
-         Vector3.new(hrp.Position.X + 15, hrp.Position.Y, hrp.Position.Z + 15)
-      }
-      knife.Throw:FireServer(unpack(args))
-   end
-end)
-
-local gui2 = Instance.new("ScreenGui")
-local button2 = Instance.new("TextButton")
-
-   
-gui2.Name = "ShootButtonGui"
-gui2.ResetOnSpawn = false
-gui2.Parent = playerGui
-
-
-
-button2.Text = "Shoot"
-button2.Size = UDim2.new(0, 100, 0, 50)
-button2.Position = UDim2.new(0.5, -50, 0.85, 0)
-button2.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-button2.TextColor3 = Color3.fromRGB(255, 255, 255)
-button2.BackgroundTransparency = 0.3
-button2.TextScaled = true
-button2.Active = true
-button2.Draggable = true
-button2.Visible = false
-button2.Parent = gui
-
-button2.MouseButton1Click:Connect(function()
-   local lp = game.Players.LocalPlayer
-   local knife = lp.Character and lp.Character:FindFirstChild("Knife")
-   local target = GetClosestPlayer()
-   if knife and knife:FindFirstChild("Throw") and target then
-
-    function getNil(name,class) for _,v in next, getnilinstances()do if v.ClassName==class and v.Name==name then return v;end end end
-
-local args = {
-    1,
-    Vector3.new(hrp.Position.X + 15, hrp.Position.Y, hrp.Position.Z + 15)
-    "AH2"
-}
-end)
-
-
--- Substituição no AutoThrow para usar o mais próximo
-MurderTab:CreateToggle({
-   Name = "Auto Throw",
-   CurrentValue = false,
-   Flag = "AutoThrowFlag",
-   Callback = function(Value)
-      getgenv().AutoThrow = Value
-      button.Visible = Value
-      if Value then
-         task.spawn(function()
-            while getgenv().AutoThrow do
-               local lp = game.Players.LocalPlayer
-               local knife = lp.Character and lp.Character:FindFirstChild("Knife")
-               if knife and knife:FindFirstChild("Throw") then
-                  local target = GetClosestPlayer()
-                  if target then
-                     local hrp = target.Character.HumanoidRootPart
-                     local args = {
-                        hrp.CFrame,
-                        Vector3.new(hrp.Position.X + 15, hrp.Position.Y, hrp.Position.Z + 15)
-                     }
-                     knife.Throw:FireServer(unpack(args))
-                  end
-               end
-               task.wait(0.1)
-            end
-         end)
-      else
-         button.Visible = false
-      end
-   end,
-})
-
--- Proteção contra morte em KillParts ao voar
-function SafePosition(char)
-   local hrp = char:FindFirstChild("HumanoidRootPart")
-   if hrp then
-      for _, part in pairs(workspace:GetDescendants()) do
-         if part:IsA("BasePart") and part.Name:lower():find("kill") then
-            if (hrp.Position - part.Position).Magnitude < 5 then
-               hrp.CFrame = CFrame.new(0, 100, 0)
-               break
-            end
-         end
-      end
-   end
-end
-
-game:GetService("RunService").Heartbeat:Connect(function()
-   local char = game.Players.LocalPlayer.Character
-   if char then SafePosition(char) end
-end)
-
--- Botão de Reentrar no servidor
-MiscTab:CreateButton({
-   Name = "Rejoin Server",
-   Callback = function()
-      game:GetService("TeleportService"):Teleport(game.PlaceId, game.Players.LocalPlayer)
    end,
 })
 
