@@ -488,9 +488,43 @@ button.MouseButton1Click:Connect(function()
    end
 end)
 
-gui.Name = "ThrowButtonGui"
-gui.ResetOnSpawn = false
-gui.Parent = playerGui
+local gui2 = Instance.new("ScreenGui")
+local button2 = Instance.new("TextButton")
+
+   
+gui2.Name = "ShootButtonGui"
+gui2.ResetOnSpawn = false
+gui2.Parent = playerGui
+
+
+
+button2.Text = "Shoot"
+button2.Size = UDim2.new(0, 100, 0, 50)
+button2.Position = UDim2.new(0.5, -50, 0.85, 0)
+button2.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+button2.TextColor3 = Color3.fromRGB(255, 255, 255)
+button2.BackgroundTransparency = 0.3
+button2.TextScaled = true
+button2.Active = true
+button2.Draggable = true
+button2.Visible = false
+button2.Parent = gui
+
+button2.MouseButton1Click:Connect(function()
+   local lp = game.Players.LocalPlayer
+   local knife = lp.Character and lp.Character:FindFirstChild("Knife")
+   local target = GetClosestPlayer()
+   if knife and knife:FindFirstChild("Throw") and target then
+
+    function getNil(name,class) for _,v in next, getnilinstances()do if v.ClassName==class and v.Name==name then return v;end end end
+
+local args = {
+    1,
+    Vector3.new(hrp.Position.X + 15, hrp.Position.Y, hrp.Position.Z + 15)
+    "AH2"
+}
+end)
+
 
 -- Substituição no AutoThrow para usar o mais próximo
 MurderTab:CreateToggle({
